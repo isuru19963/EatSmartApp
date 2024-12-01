@@ -7,6 +7,9 @@ class UserViewModel with ChangeNotifier {
   Future<bool> saveUser(UserModel user) async {
     final SharedPreferences sp = await SharedPreferences.getInstance();
     sp.setString("token", user.token.toString());
+    sp.setString("user_id", user.userId.toString());
+    sp.setString("name", user.name.toString());
+    sp.setString("email", user.email.toString());
     notifyListeners(); // so that theuser is saved!
 
     return true;

@@ -6,6 +6,8 @@ import 'package:mvvm_app/utils/utils.dart';
 import 'package:mvvm_app/viewModel/user_view_model.dart';
 import 'package:provider/provider.dart';
 
+import '../view/new_home_screen.dart';
+
 class AuthViewModel with ChangeNotifier {
   final _auth = AuthRepository();
 
@@ -30,14 +32,23 @@ class AuthViewModel with ChangeNotifier {
     _auth.apiLogin(data).then((value) {
       setLoginLoading(false);
 
-      //! Api hit krtay huay sharedPreferences safe bhi krne hain!
 
       final userPreference = Provider.of<UserViewModel>(context, listen: false);
-      userPreference.saveUser(UserModel(token: value['token'].toString()));
+      print('value');
+      print(value);
+      userPreference.saveUser(UserModel(token: value['token'].toString(),
+          name: value['user']['name'].toString(),
+          email: value['user']['phone'].toString(),
+          userId: value['user']['id'].toString()
+      )
+      );
 
-      Utils.flushBarErrorMessage("Login Successfull", context);
+      Utils.flushBarErrorMessage("Login Successfully", context);
 
-      Navigator.pushNamed(context, RouteNames.home);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) =>  HomePage()),
+      );
     }).onError((error, stackTrace) {
       Utils.flushBarErrorMessage(error.toString(), context);
       setLoginLoading(false);

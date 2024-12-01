@@ -6,6 +6,7 @@ class AuthRepository {
   Future<dynamic> apiLogin(dynamic data) async {
     try {
       final response = await _network.getPostApiResponse(AppUrls.loginEndPoint, data);
+      print(response);
       return response;
     } catch (e) {
       rethrow; //Big Brain

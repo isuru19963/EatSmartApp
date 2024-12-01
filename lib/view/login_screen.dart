@@ -132,26 +132,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 loading: authviewmodel.loading,
                 onPress: () {
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) =>  HomePage()),
-                  );
-                  // if (_emailController.text.isEmpty &&
-                  //     _passwordController.text.isEmpty) {
-                  //   Utils.flushBarErrorMessage(
-                  //       "email aur password de bhai", context);
-                  // } else if (_passwordController.text.isEmpty) {
-                  //   Utils.flushBarErrorMessage("Password de bhai", context);
-                  // } else if (_emailController.text.isEmpty) {
-                  //   Utils.flushBarErrorMessage("email de bhai", context);
-                  // } else {
-                  //   Map data = {
-                  //     "email": _emailController.text.toString(),
-                  //     "password": _passwordController.text.toString()
-                  //   };
-                  //   authviewmodel.apilogin(data, context);
-                  //   debugPrint("hit API");
-                  // }
+
+                  if (_emailController.text.isEmpty &&
+                      _passwordController.text.isEmpty) {
+                    Utils.flushBarErrorMessage(
+                        "Please enter email", context);
+                  } else if (_passwordController.text.isEmpty) {
+                    Utils.flushBarErrorMessage("Password de bhai", context);
+                  } else if (_emailController.text.isEmpty) {
+                    Utils.flushBarErrorMessage("email de bhai", context);
+                  } else {
+                    Map data = {
+                      "email": _emailController.text.toString(),
+                      "password": _passwordController.text.toString()
+                    };
+                    authviewmodel.apilogin(data, context);
+                    debugPrint("hit API");
+                  }
                 }),
             SizedBox(
               height: height * 0.02,

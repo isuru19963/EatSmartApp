@@ -1,15 +1,181 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class HomePage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:mvvm_app/view/restaurant_Screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shrink_sidemenu/shrink_sidemenu.dart';
+
+import '../data/network/utils.dart';
+import '../models/cart_model.dart';
+import '../repository/cart_repositary.dart';
+import '../res/widgets/app_urls.dart';
+import '../utils/side_bar_menu.dart';
+import '../viewModel/home_view_model.dart';
+import '../viewModel/user_view_model.dart';
+import 'cart_screen.dart';
+import 'food_detail_screen.dart';
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomePage> {
+  bool isOpened = false;
+  final CartService _cartService = CartService();
+  List<CartItem> _cartItems = [];
+  HomeViewModel hm = HomeViewModel();
+  final GlobalKey<SideMenuState> _sideMenuKey = GlobalKey<SideMenuState>();
+  final GlobalKey<SideMenuState> _endSideMenuKey = GlobalKey<SideMenuState>();
+  List categories = [];
+  List foods = [];
+  List vendors = [];
+  @override
+  void initState() {
+    hm.fetchMoviesListApi();
+    getCategoriesData();
+    getProductsData();
+    getVendorsData();
+    super.initState();
+  }
+  getCategoriesData() async {
+    final userViewModel = UserViewModel();
+
+    final user = await userViewModel.getUser();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    var data = {
+      'user_id': localStorage.getString('user_id'),
+    };
+
+    var res = await Network().postData(data, '${AppUrls.baseUrl}/api/getAllCategories');
+    print(res.body);
+
+
+
+    setState(()  {
+
+    });
+
+
+    if (json.decode(res.body)['categories'] != null) {
+
+      categories=json.decode(res.body)['categories'];
+
+    } else {
+
+    }
+
+
+  }
+
+  getProductsData() async {
+    final userViewModel = UserViewModel();
+
+    final user = await userViewModel.getUser();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    var data = {
+      'user_id': localStorage.getString('user_id'),
+    };
+
+    var res = await Network().postData(data, '${AppUrls.baseUrl}/api/getAllFoods');
+    print(res.body);
+
+
+
+    setState(()  {
+
+    });
+
+
+    if (json.decode(res.body)['foods'] != null) {
+
+      foods=json.decode(res.body)['foods'];
+
+    } else {
+
+    }
+
+
+  }
+  getVendorsData() async {
+    final userViewModel = UserViewModel();
+
+    final user = await userViewModel.getUser();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+
+    var data = {
+      'user_id': localStorage.getString('user_id'),
+    };
+
+    var res = await Network().postData(data, '${AppUrls.baseUrl}/api/getAllVendros');
+    print(res.body);
+
+
+
+    setState(()  {
+
+    });
+
+
+    if (json.decode(res.body)['vendors'] != null) {
+
+      vendors=json.decode(res.body)['vendors'];
+
+    } else {
+
+    }
+
+
+  }
+  toggleMenu([bool end = false]) {
+    if (end) {
+      final _state = _endSideMenuKey.currentState!;
+      if (_state.isOpened) {
+        _state.closeSideMenu();
+      } else {
+        _state.openSideMenu();
+      }
+    } else {
+      final _state = _sideMenuKey.currentState!;
+      if (_state.isOpened) {
+        _state.closeSideMenu();
+      } else {
+        _state.openSideMenu();
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SideMenu(
+        background: Color(0xff276A6E),
+    key: _sideMenuKey,
+    menu: SideMenuBar(),
+    type: SideMenuType.slideNRotate,
+    onChange: (_isOpened) {
+    setState(() => isOpened = _isOpened);
+    },
+    child: IgnorePointer(
+    ignoring: isOpened,
+    child:Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.grey[100],
         toolbarHeight: 80,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.menu,color: Colors.black,),
+          onPressed: () {
+            if (isOpened) {
+              Navigator.pop(context);
+            } else {
+              toggleMenu();
+            }
+          },
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -62,15 +228,14 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 10),
             Container(
               height: 150,
-              child: ListView(
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  categoryItem('Deserts', 'assets/images/e1.png'),
-                  categoryItem('Vegetarian', 'assets/images/e2.png'),
-                  categoryItem('Meat', 'assets/images/e3.png'),
-                  categoryItem('Fruits', 'assets/images/e4.png'),
-                ],
-              ),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final category = categories[index];
+                  return categoryItem(category['name']!, category['image']!);
+                },
+              )
             ),
 
             const SizedBox(height: 20),
@@ -86,27 +251,31 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 10),
             Container(
               height: 350,
-              child: ListView(
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  foodCard(
-                    'Cheese Burger',
-                    'Cheesy Heaven',
-                    '\$5.99',
-                    '600 kcal',
-                    Colors.blue,
-                    'assets/images/b1.png',
-                  ),
-                  foodCard(
-                    'Chicken Sandwich',
-                    'Popeyes',
-                    '\$3.59',
-                    '800 kcal',
-                    Colors.black,
-                    'assets/images/b2.png',
-                  ),
-                ],
-              ),
+                itemCount: foods.length,
+                itemBuilder: (context, index) {
+                  final food = foods[index];
+                  return GestureDetector(
+                    onTap:(){
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  FoodDetailsPage(image:  food['image'], id:  food['id'].toString(), description: food['description'], name: food['name'], price: food['price'],)),
+                  );}
+                  ,child:foodCard(
+                    food['name'],
+                    food['id'].toString(),
+                    food['description'],
+                    food['price'],
+                    food['calorie'],
+
+                    Colors.green,
+                    food['image'],
+
+
+                  ));
+                },
+              )
             ),
 
             const SizedBox(height: 20),
@@ -148,14 +317,18 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                restaurantItem('McDonald\'s', '15 mins', 'assets/images/r2.png'),
-                restaurantItem('Wendy\'s', '25 mins', 'assets/images/r1.png'),
-              ],
-            ),
 
+            Container(
+                height: 150,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: vendors.length,
+                  itemBuilder: (context, index) {
+                    final category = vendors[index];
+                    return restaurantItem(category['name']!, '15 mins', category['vendor_image']!,category['id'].toString()!,category['occupation']!);
+                  },
+                )
+            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -185,6 +358,8 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
+    ),
+    )
     );
   }
 
@@ -203,7 +378,7 @@ class HomePage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 5,vertical: 5),
         child:CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage(imagePath),
+              backgroundImage: NetworkImage(AppUrls.categoryImages+imagePath),
             ),),
             const SizedBox(height: 5),
             Text(
@@ -219,6 +394,7 @@ class HomePage extends StatelessWidget {
 
   Widget foodCard(
       String name,
+      String id,
       String desc,
       String price,
       String calories,
@@ -246,9 +422,9 @@ class HomePage extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: Image.asset(
-                imagePath,
-                height: 210,
+              child: Image.network(
+                AppUrls.FoodImages+imagePath,
+                height: 200,
                 width: 220,
                 fit: BoxFit.cover,
               ),
@@ -259,13 +435,14 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text(desc, style: const TextStyle(color: Colors.grey)),
+                  Text(desc,
+                      overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(price, style: const TextStyle(fontSize: 16)),
-                      Text(calories, style: const TextStyle(color: Colors.grey)),
+                      Text('Aud $price', style: const TextStyle(fontSize: 16)),
+                      Text('$calories kcal', style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -280,10 +457,32 @@ class HomePage extends StatelessWidget {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children:  [
                         Icon(Icons.shopping_cart, size: 16),
                         SizedBox(width: 5),
-                        Text('ADD TO CART'),
+                      GestureDetector(
+                        onTap: () async {
+
+                            final newItem = CartItem(
+                              id: id,
+                              name: name,
+                              quantity: 1,
+                              price: double.parse(price),
+                              calorie: calories,
+                              image: AppUrls.FoodImages+imagePath, // Example calorie value as String
+                            );
+                            await _cartService.addToCart(newItem);
+
+
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) =>  CartScreen()),
+                          );
+
+                        },
+                        child:Text('ADD TO CART'),
+                      ),
                       ],
                     ),
                   ),
@@ -296,12 +495,23 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget restaurantItem(String name, String time, String imagePath) {
-    return Column(
+  Widget restaurantItem(String name, String time, String imagePath, String vendorId, String description) {
+    return GestureDetector(
+    onTap: (){
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) =>  RestaurantScreen(vendorId: vendorId.toString(), description: description, name: name,)),
+      );
+
+    },
+      child:
+    Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+    child: Column(
       children: [
         CircleAvatar(
           radius: 35,
-          backgroundImage: AssetImage(imagePath),
+          backgroundImage: NetworkImage( AppUrls.VendorImages+imagePath,),
         ),
         const SizedBox(height: 5),
         Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -310,6 +520,6 @@ class HomePage extends StatelessWidget {
           style: const TextStyle(color: Colors.grey, fontSize: 12),
         ),
       ],
-    );
+    )));
   }
 }
